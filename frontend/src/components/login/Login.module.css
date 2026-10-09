@@ -1,0 +1,274 @@
+:root{
+    --font-jetbrains: "JetBrains Mono", "JetBrains Mono Fallback";
+    --font-noto: "Noto Sans", "Noto Sans Fallback";
+    --font-sans: "Plus Jakarta Sans", "Plus Jakarta Sans Fallback", system-ui, sans-serif;
+    font-family: var(--font-sans);
+}
+
+.loginContainer{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-height: 100dvh; 
+}
+
+.loginDescription{
+    width: 30%;
+    /* height: 100vh; */
+    background-color: #0E241F;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.login-header{
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    gap: 1rem;
+}
+
+.login-icon{
+    color: white;
+    font-size: 1.5rem;
+    background-color: #12a47e;
+    padding: 0.25rem;
+    border-radius: 0.6rem;
+    border-color: #e2eae7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-title{
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: white;
+}
+
+.login-content{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.login-subtitle-title{
+    color: #6FD9B8;
+    border-color: #e2eae7;
+    text-transform: uppercase;
+    --tw-tracking: .12em;
+    letter-spacing: 0.12em;
+    --tw-font-weight: 800;
+    font-weight: 800;
+}
+
+.login-subtitle-header{
+    font-size: 2.8rem;
+    font-weight: 600;
+    color: white;
+    text-wrap: pretty;
+    letter-spacing: -0.025rem;
+    --tw-tracking:-0.025em;
+}
+
+.login-subtitle-content{
+    font-size: 1rem;
+    color: #92AEA6;
+}
+
+.login-footer{
+    display: flex;
+    flex-direction: row;
+    gap: 3rem;
+}
+
+.section{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.section-header{
+    font-weight: 700;
+    font-size: 1.9rem;
+    color: white;
+    letter-spacing: -0.03em;
+    font-family: var(--font-jetbrains), var(--font-noto), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.section-content{
+    color: #6D8A82;;
+    font-weight: 300;
+    font-size: 0.8rem;
+}
+
+/* Login form section */
+.loginForm-containerSection{
+    width: 70%;
+    padding: 3rem;
+}
+
+.loginContainer-form{
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loginForm{
+    padding: 1rem;
+    border: none;
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.loginForm-header{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.loginContainer-title{
+    font-size: 2.4rem;
+    color: #0e241f;
+    letter-spacing: -0.025em;
+        --tw-tracking:-0.025em;
+        --tw-font-weight: 800;
+    font-weight: 800;
+}
+
+.loginContainer-subTitle{
+    font-size: 1rem;
+    color: #7a918b;
+}
+
+.loginContainer-field{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.loginContainer-field label{
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color:  #7a918b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: block;
+}
+
+.loginContainer-field input{
+    border: 1px solid #e2eae7;
+    width: 100%;
+    height: 2.5rem;
+    color:#0E241F;
+    font-family: var(--font-sans);
+    background-color: #fff;
+    border-radius: 0.6rem;
+    padding: 0 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+
+.loginContainer-field-subField input{
+    border: 1px solid #e2eae7;
+    width: 100%;
+    height: 2.5rem;
+    color:#0E241F;
+    font-family: var(--font-sans);
+    background-color: #fff;
+    border-radius: 0.6rem;
+    padding: 0 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.loginContainer-field-subField p{
+    color:  #7a918b;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.loginContainer-button{
+    width: 100%;
+    height: 2.5rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border: 1px solid #0000;
+    border-radius: 0.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding:  0 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background .15s, border-color .15s, transform .1s, box-shadow .15s;
+    display: inline-flex;
+    background: #12a47e;
+    color: #fff;
+    box-shadow: 0 1px 2px #0c7c5f4d;
+}
+
+.loginContainer-footer{
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.loginContainer-footer span:last-child{
+    color: #0c7c5f;
+    cursor: pointer;
+}
+
+.nameSection{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+.nameSection-field{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nameSection-field label{
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color:  #7a918b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: block;
+}
+
+.nameSection-field input{
+    border: 1px solid #e2eae7;
+    width: 100%;
+    height: 2.5rem;
+    color:#0E241F;
+    font-family: var(--font-sans);
+    background-color: #fff;
+    border-radius: 0.6rem;
+    padding: 0 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1;
+    transition: border-color .15s, box-shadow .15s;
+}
