@@ -1,5 +1,11 @@
 const express = require("express");
-const { createUser, checkUser, getMe } = require("../controllers/userController");
+const {
+    createUser,
+    checkUser,
+    getMe,
+    forgotPassword,
+    resetPassword,
+} = require("../controllers/userController");
 const { getUserBalances } = require("../controllers/balanceController");
 const { protect, requireSelf } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
@@ -19,6 +25,21 @@ router.route("/login").post(
         message: "Too many login attempts. Try again shortly.",
     }),
     checkUser
+);
+
+// Password reset. The request is tightly throttled so it can't be used to
+// spam someone's inbox; the reset itself is throttled to slow token guessing.
+router.route("/forgot-password").post(
+    rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 5,
+        message: "Too many reset requests. Try again later.",
+    }),
+    forgotPassword
+);
+router.route("/reset-password/:token").patch(
+    rateLimit({ windowMs: 60 * 60 * 1000, max: 10 }),
+    resetPassword
 );
 
 // Everything below needs a valid token.

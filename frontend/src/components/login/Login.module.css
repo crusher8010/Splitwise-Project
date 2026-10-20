@@ -121,6 +121,8 @@
 }
 
 .loginForm{
+    width: 100%;
+    max-width: 30rem;
     padding: 1rem;
     border: none;
     gap: 1rem;

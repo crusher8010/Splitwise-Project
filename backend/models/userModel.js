@@ -36,6 +36,15 @@ const userSchema = new mongoose.Schema(
         },
         // No `expenses` / `paymentHistory` here either — a user's position is
         // per-group and derived from the expense ledger.
+
+        passwordResetToken: {
+            type: String,
+            select: false,
+        },
+        passwordResetExpires: {
+            type: Date,
+            select: false
+        }
     },
     { timestamps: true }
 );

@@ -110,3 +110,81 @@ exports.getMe = catchAsync(async (req, res) => {
 
     res.status(200).json({ success: true, data: user });
 });
+
+exports.forgotPassword = catchAsync(async (res, res) => {
+    const { email } = req.body;
+
+    if(!email){
+        res.status(400).json({
+            success: false,
+            message: "Invalid request. Please provide an email address!"
+        })
+    };
+
+    const user = await User.findOne({email: String(email).toLowerCase()});
+
+    if(user){
+        let token = crypto.randomBytes(32).toString("hex");
+        let hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        user.passwordResetToken = hashedToken;
+        user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+        await user.save({ validateBeforeSave: false });
+
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+
+        try {
+            await sendEmail({
+                to: user.email,
+                subject: "Reset your Tally password",
+                text: `Hi ${user.firstName},\n\nUse this link to reset your password. It expires in 15 minutes:\n${resetUrl}\n\nIf you didn't request this, you can ignore this email.`,
+            });
+        } catch (err) {
+            // Don't leave a usable token behind if the email never went out.
+            user.passwordResetToken = undefined;
+            user.passwordResetExpires = undefined;
+            await user.save({ validateBeforeSave: false });
+            throw new AppError("Could not send the reset email. Try again later.", 500);
+        }
+    }else{
+        res.status(404).json({
+            success: false,
+            message: "User with this email address does not exist!"
+        })
+    }
+})
+
+exports.resetPassword = catchAsync(async (req, res) => {
+    const {password} = req.body;
+
+    if (typeof password !== "string" || !password) {
+        throw new AppError("Please provide a new password", 400);
+    }
+    if (password.length < 8) {
+        throw new AppError("Password must be at least 8 characters", 400);
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+    const user = await User.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        throw new AppError("Token is invalid or has expired", 400);
+    }
+
+    const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    user.password = hashed;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Password has been reset successfully!"
+    })
+})
