@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { VscSettings } from "react-icons/vsc";
 import style from "./Login.module.css";
+import GoogleButton from "./GoogleButton";
+import { api } from "../../api";
 
 const STATS = [
     { value: "₹0.00", label: "rounding loss, ever" },
@@ -16,8 +18,11 @@ const FORMS = {
         subtitle: "Log in to pick up where the ledger left off.",
         fields: [EMAIL, PASSWORD],
         button: "Log in",
+        showForgot: true,
+        showGoogle: true,
         switchText: "New here ?",
         switchLabel: "Create an account",
+        switchTo: "signup",
     },
     signup: {
         title: "Create your account",
@@ -37,21 +42,74 @@ const FORMS = {
             { ...PASSWORD, hint: "Minimum 8 characters — enforced server-side." },
         ],
         button: "Create account",
+        showGoogle: true,
         switchText: "Already have an account ?",
         switchLabel: "Log in",
+        switchTo: "login",
+    },
+    mobile: {
+        title: "One last step",
+        subtitle: "Add your mobile number so groups you were already added to can find you.",
+        fields: [{ label: "Mobile Number", type: "tel", placeholder: "123-456-7890", name: "mobileNo" }],
+        button: "Save and continue",
+    },
+    forgot: {
+        title: "Forgot your password?",
+        subtitle: "Enter your email and we'll send you a link to reset it.",
+        fields: [EMAIL],
+        button: "Send reset link",
+        switchText: "Remembered it ?",
+        switchLabel: "Back to log in",
+        switchTo: "login",
     },
 };
 
-const Input = ({ label, type, placeholder }) => (
+const Input = ({ label, type, placeholder, value, onChange }) => (
     <>
         <label>{label}</label>
-        <input type={type} placeholder={placeholder} />
+        <input type={type} placeholder={placeholder} value={value} onChange={onChange} />
     </>
 );
 
 export default function Login() {
-    const [isLogin, setIsLogin] = useState(false);
-    const form = FORMS[isLogin ? "login" : "signup"];
+    const [view, setView] = useState("signup");
+    const form = FORMS[view];
+    const [mobileNo, setMobileNo] = useState("");
+    const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
+
+    const goTo = (next) => {
+        setError("");
+        setNotice("");
+        setView(next);
+    };
+
+    const handleGoogle = async (credential) => {
+        setError("");
+        try {
+            const res = await api("/user/google", { method: "POST", body: { credential } });
+            localStorage.setItem("token", res.token);
+            if (res.needsMobile) return goTo("mobile");
+            setNotice(`Welcome, ${res.data.firstName}! You are logged in.`);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (view !== "mobile") return;
+        setError("");
+        try {
+            await api("/user/me/mobile", {
+                method: "PATCH",
+                body: { mobileNo },
+                token: localStorage.getItem("token"),
+            });
+            setNotice("All set! Your account is ready.");
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
     return (
         <div className={style.loginContainer}>
@@ -112,17 +170,50 @@ export default function Login() {
                                         </div>
                                     </>
                                 ) : (
-                                    <Input {...f} />
+                                    <Input
+                                        {...f}
+                                        {...(f.name === "mobileNo" && {
+                                            value: mobileNo,
+                                            onChange: (e) => setMobileNo(e.target.value),
+                                        })}
+                                    />
                                 )}
                             </div>
                         ))}
 
-                        <button className={style["loginContainer-button"]}>{form.button}</button>
+                        {form.showForgot && (
+                            <span
+                                className={style["loginContainer-forgot"]}
+                                onClick={() => goTo("forgot")}
+                            >
+                                Forgot password?
+                            </span>
+                        )}
 
-                        <div className={style["loginContainer-footer"]}>
-                            <span>{form.switchText}</span>
-                            <span onClick={() => setIsLogin(!isLogin)}>{form.switchLabel}</span>
-                        </div>
+                        {error && <p className={style["loginContainer-error"]}>{error}</p>}
+                        {notice && <p className={style["loginContainer-notice"]}>{notice}</p>}
+
+                        <button className={style["loginContainer-button"]} onClick={handleSubmit}>
+                            {form.button}
+                        </button>
+
+                        {form.showGoogle && (
+                            <>
+                                <div className={style["loginContainer-divider"]}>or</div>
+                                <GoogleButton
+                                    key={view}
+                                    onCredential={handleGoogle}
+                                    label={view === "signup" ? "Sign up with Google" : "Log in with Google"}
+                                />
+                            </>
+                        )}
+
+                        {form.switchTo && (
+                            <div className={style["loginContainer-footer"]}>
+                                <span>{form.switchText}</span>
+                                <span onClick={() => goTo(form.switchTo)}>{form.switchLabel}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

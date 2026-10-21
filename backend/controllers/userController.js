@@ -1,8 +1,12 @@
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Members = require("../models/membersModel");
 const { AppError, catchAsync } = require("../utils/appError");
+const { sendEmail } = require("../utils/email");
+const googleClient = new OAuth2Client();
 
 const SALT_ROUNDS = 12;
 const TOKEN_TTL = process.env.JWT_EXPIRES_IN || "1h";
@@ -111,7 +115,7 @@ exports.getMe = catchAsync(async (req, res) => {
     res.status(200).json({ success: true, data: user });
 });
 
-exports.forgotPassword = catchAsync(async (res, res) => {
+exports.forgotPassword = catchAsync(async (req, res) => {
     const { email } = req.body;
 
     if(!email){
@@ -188,3 +192,95 @@ exports.resetPassword = catchAsync(async (req, res) => {
         message: "Password has been reset successfully!"
     })
 })
+
+// POST /users/google  { credential }
+// Sign up or log in with a Google ID token. The token is verified with Google
+// (signature + audience), so nothing about who the user is comes from us
+// trusting the client.
+exports.googleAuth = catchAsync(async (req, res) => {
+    const { credential } = req.body;
+    if (typeof credential !== "string" || !credential) {
+        throw new AppError("Google credential is required", 400);
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) throw new Error("GOOGLE_CLIENT_ID is not configured");
+
+    let payload;
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: clientId,
+        });
+        payload = ticket.getPayload();
+    } catch {
+        throw new AppError("Invalid Google credential", 401);
+    }
+
+    if (!payload?.email || !payload.email_verified) {
+        throw new AppError("Your Google account email is not verified", 401);
+    }
+
+    const email = payload.email.toLowerCase();
+    let isNewUser = false;
+
+    let user = await User.findOne({ googleId: payload.sub });
+
+    if (!user) {
+        user = await User.findOne({ email });
+
+        if (user) {
+            // Same verified email as an existing account: link, don't duplicate.
+            user.googleId = payload.sub;
+            await user.save({ validateBeforeSave: false });
+        } else {
+            user = await User.create({
+                googleId: payload.sub,
+                email,
+                firstName: payload.given_name || payload.name || email.split("@")[0],
+                lastName: payload.family_name || "-",
+            });
+            isNewUser = true;
+        }
+    }
+
+    res.status(isNewUser ? 201 : 200).json({
+        success: true,
+        data: user,
+        token: signToken(user),
+        isNewUser,
+        // Google doesn't give us a phone number; the client must collect it.
+        needsMobile: !user.mobileNo,
+    });
+});
+
+// PATCH /users/me/mobile  { mobileNo }  (protected)
+// Second step for Google sign-ups: attach the mobile number and adopt any
+// group memberships created for that number before they joined.
+exports.setMobile = catchAsync(async (req, res) => {
+    const mobileNo = String(req.body.mobileNo || "").trim();
+    if (!mobileNo) throw new AppError("mobileNo is required", 400);
+
+    if (req.user.mobileNo) {
+        throw new AppError("Mobile number is already set", 409);
+    }
+
+    const phoneTaken = await User.findOne({ mobileNo });
+    if (phoneTaken) {
+        throw new AppError("An account with that mobile number already exists", 409);
+    }
+
+    req.user.mobileNo = mobileNo;
+    await req.user.save();
+
+    const linked = await Members.updateMany(
+        { mobileNo, userId: null },
+        { $set: { userId: req.user._id } }
+    );
+
+    res.status(200).json({
+        success: true,
+        data: req.user,
+        linkedGroups: linked.modifiedCount || 0,
+    });
+});

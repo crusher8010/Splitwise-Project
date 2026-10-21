@@ -5,6 +5,8 @@ const {
     getMe,
     forgotPassword,
     resetPassword,
+    googleAuth,
+    setMobile,
 } = require("../controllers/userController");
 const { getUserBalances } = require("../controllers/balanceController");
 const { protect, requireSelf } = require("../middleware/auth");
@@ -42,12 +44,18 @@ router.route("/reset-password/:token").patch(
     resetPassword
 );
 
+router.route("/google").post(
+    rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }),
+    googleAuth
+);
+
 // Everything below needs a valid token.
 router.use(protect);
 
 router.route("/me").get((req, res) => {
     res.status(200).json({ success: true, data: req.user });
 });
+router.route("/me/mobile").patch(setMobile);
 router.route("/me/balances").get(getUserBalances);
 
 // Legacy id-in-the-path forms — the id must be the caller's own.

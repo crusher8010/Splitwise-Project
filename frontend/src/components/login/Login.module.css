@@ -238,6 +238,14 @@
     cursor: pointer;
 }
 
+.loginContainer-forgot{
+    align-self: flex-end;
+    margin-top: -0.4rem;
+    font-size: 0.85rem;
+    color: #0c7c5f;
+    cursor: pointer;
+}
+
 .nameSection{
     display: flex;
     flex-direction: row;
@@ -273,4 +281,75 @@
     font-weight: 500;
     line-height: 1;
     transition: border-color .15s, box-shadow .15s;
+}
+.loginContainer-divider{
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #7a918b;
+    font-size: 0.85rem;
+}
+
+.loginContainer-divider::before,
+.loginContainer-divider::after{
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e2eae7;
+}
+
+.loginContainer-error{
+    margin: 0;
+    color: #c0392b;
+    font-size: 0.9rem;
+}
+
+.loginContainer-notice{
+    margin: 0;
+    color: #0c7c5f;
+    font-size: 0.9rem;
+}
+
+.google-button{
+    position: relative;
+    width: 100%;
+    height: 2.5rem;
+    border-radius: 0.6rem;
+    overflow: hidden;
+}
+
+.google-button-face{
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    box-sizing: border-box;
+    padding: 0 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #0e241f;
+    background: #fff;
+    border: 1px solid #e2eae7;
+    border-radius: 0.6rem;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+}
+
+.google-button:hover .google-button-face{
+    background: #f6faf8;
+    border-color: #c9d9d3;
+}
+
+.google-button-overlay{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 100%;
+    transform-origin: left top;
+    opacity: 0.01;
+    cursor: pointer;
 }
