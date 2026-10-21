@@ -151,6 +151,11 @@ exports.forgotPassword = catchAsync(async (req, res) => {
             await user.save({ validateBeforeSave: false });
             throw new AppError("Could not send the reset email. Try again later.", 500);
         }
+
+        res.status(200).json({
+            success: true,
+            message: "A password reset link has been sent to your email.",
+        });
     }else{
         res.status(404).json({
             success: false,

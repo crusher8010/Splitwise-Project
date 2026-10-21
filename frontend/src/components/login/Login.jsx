@@ -9,8 +9,8 @@ const STATS = [
     { value: "n−1", label: "payments to clear a group" },
 ];
 
-const EMAIL = { label: "Email", type: "email", placeholder: "johnDoe@example.com" };
-const PASSWORD = { label: "Password", type: "password", placeholder: "At least 8 characters" };
+const EMAIL = { name: "email", label: "Email", type: "email", placeholder: "johnDoe@example.com" };
+const PASSWORD = { name: "password", label: "Password", type: "password", placeholder: "At least 8 characters" };
 
 const FORMS = {
     login: {
@@ -28,12 +28,13 @@ const FORMS = {
         title: "Create your account",
         subtitle: "Groups you were already added to will be waiting for you.",
         names: [
-            { label: "First Name", type: "text", placeholder: "John" },
-            { label: "Last Name", type: "text", placeholder: "Doe" },
+            { name: "firstName", label: "First Name", type: "text", placeholder: "John" },
+            { name: "lastName", label: "Last Name", type: "text", placeholder: "Doe" },
         ],
         fields: [
             EMAIL,
             {
+                name: "mobileNo",
                 label: "Mobile Number",
                 type: "tel",
                 placeholder: "123-456-7890",
@@ -50,7 +51,7 @@ const FORMS = {
     mobile: {
         title: "One last step",
         subtitle: "Add your mobile number so groups you were already added to can find you.",
-        fields: [{ label: "Mobile Number", type: "tel", placeholder: "123-456-7890", name: "mobileNo" }],
+        fields: [{ name: "mobileNo", label: "Mobile Number", type: "tel", placeholder: "123-456-7890" }],
         button: "Save and continue",
     },
     forgot: {
@@ -64,23 +65,74 @@ const FORMS = {
     },
 };
 
-const Input = ({ label, type, placeholder, value, onChange }) => (
-    <>
-        <label>{label}</label>
-        <input type={type} placeholder={placeholder} value={value} onChange={onChange} />
-    </>
-);
+const Input = ({ label, type, placeholder, hint, value, onChange }) => {
+    const input = <input type={type} placeholder={placeholder} value={value} onChange={onChange} />;
+    return (
+        <>
+            <label>{label}</label>
+            {hint ? (
+                <div className={style["loginContainer-field-subField"]}>
+                    {input}
+                    <p>{hint}</p>
+                </div>
+            ) : (
+                input
+            )}
+        </>
+    );
+};
+
+const EMPTY = { firstName: "", lastName: "", email: "", mobileNo: "", password: "" };
+
+// What each view sends, and what to tell the user when it works.
+const ACTIONS = {
+    signup: {
+        run: (v) =>
+            api("/user/signup", {
+                method: "POST",
+                body: {
+                    firstName: v.firstName,
+                    lastName: v.lastName,
+                    email: v.email,
+                    mobileNo: v.mobileNo,
+                    password: v.password,
+                },
+            }),
+        done: (res) => `Account created! Welcome, ${res.data.firstName}.`,
+    },
+    login: {
+        run: (v) => api("/user/login", { method: "POST", body: { email: v.email, password: v.password } }),
+        done: (res) => `Welcome back, ${res.data.firstName}! You are logged in.`,
+    },
+    forgot: {
+        run: (v) => api("/user/forgot-password", { method: "POST", body: { email: v.email } }),
+        done: () => "Check your inbox — we've sent you a link to reset your password.",
+    },
+    mobile: {
+        run: (v) =>
+            api("/user/me/mobile", {
+                method: "PATCH",
+                body: { mobileNo: v.mobileNo },
+                token: localStorage.getItem("token"),
+            }),
+        done: () => "All set! Your account is ready.",
+    },
+};
 
 export default function Login() {
     const [view, setView] = useState("signup");
     const form = FORMS[view];
-    const [mobileNo, setMobileNo] = useState("");
+    const [values, setValues] = useState(EMPTY);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const setField = (name) => (e) => setValues((v) => ({ ...v, [name]: e.target.value }));
 
     const goTo = (next) => {
         setError("");
         setNotice("");
+        setValues((v) => ({ ...v, password: "" }));
         setView(next);
     };
 
@@ -96,18 +148,21 @@ export default function Login() {
         }
     };
 
-    const handleSubmit = async () => {
-        if (view !== "mobile") return;
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setError("");
+        setNotice("");
+        setLoading(true);
         try {
-            await api("/user/me/mobile", {
-                method: "PATCH",
-                body: { mobileNo },
-                token: localStorage.getItem("token"),
-            });
-            setNotice("All set! Your account is ready.");
+            const { run, done } = ACTIONS[view];
+            const res = await run(values);
+            if (res.token) localStorage.setItem("token", res.token);
+            setNotice(done(res));
+            setValues((v) => ({ ...v, password: "" }));
         } catch (err) {
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -143,7 +198,7 @@ export default function Login() {
 
             <div className={style["loginForm-containerSection"]}>
                 <div className={style["loginContainer-form"]}>
-                    <div className={style.loginForm}>
+                    <form className={style.loginForm} onSubmit={handleSubmit} noValidate>
                         <div className={style["loginForm-header"]}>
                             <span className={style["loginContainer-title"]}>{form.title}</span>
                             <p className={style["loginContainer-subTitle"]}>{form.subtitle}</p>
@@ -152,32 +207,16 @@ export default function Login() {
                         {form.names && (
                             <div className={style.nameSection}>
                                 {form.names.map((f) => (
-                                    <div key={f.label} className={style["nameSection-field"]}>
-                                        <Input {...f} />
+                                    <div key={f.name} className={style["nameSection-field"]}>
+                                        <Input {...f} value={values[f.name]} onChange={setField(f.name)} />
                                     </div>
                                 ))}
                             </div>
                         )}
 
                         {form.fields.map((f) => (
-                            <div key={f.label} className={style["loginContainer-field"]}>
-                                {f.hint ? (
-                                    <>
-                                        <label>{f.label}</label>
-                                        <div className={style["loginContainer-field-subField"]}>
-                                            <input type={f.type} placeholder={f.placeholder} />
-                                            <p>{f.hint}</p>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <Input
-                                        {...f}
-                                        {...(f.name === "mobileNo" && {
-                                            value: mobileNo,
-                                            onChange: (e) => setMobileNo(e.target.value),
-                                        })}
-                                    />
-                                )}
+                            <div key={f.name} className={style["loginContainer-field"]}>
+                                <Input {...f} value={values[f.name]} onChange={setField(f.name)} />
                             </div>
                         ))}
 
@@ -193,8 +232,8 @@ export default function Login() {
                         {error && <p className={style["loginContainer-error"]}>{error}</p>}
                         {notice && <p className={style["loginContainer-notice"]}>{notice}</p>}
 
-                        <button className={style["loginContainer-button"]} onClick={handleSubmit}>
-                            {form.button}
+                        <button type="submit" className={style["loginContainer-button"]} disabled={loading}>
+                            {loading ? "Please wait..." : form.button}
                         </button>
 
                         {form.showGoogle && (
@@ -214,7 +253,7 @@ export default function Login() {
                                 <span onClick={() => goTo(form.switchTo)}>{form.switchLabel}</span>
                             </div>
                         )}
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
